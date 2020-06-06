@@ -1,16 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/email_sign_in_page.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/sign_in_button.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/social_sign_in_button.dart';
 import 'package:timetrackerfluttercourse/services/auth.dart';
 
 class SignInPage extends StatelessWidget {
-  final AuthBase auth;
-
-  const SignInPage({Key key, @required this.auth}) : super(key: key);
-
-  void _signInAnonymously() async {
+  void _signInAnonymously(BuildContext context) async {
+    final auth = Provider.of<AuthBase>(context, listen: false);
     try {
       await auth.signInAnonymously();
     } catch (e) {
@@ -18,8 +16,9 @@ class SignInPage extends StatelessWidget {
     }
   }
 
-  void _signInWithGoogle() async {
+  void _signInWithGoogle(BuildContext context) async {
     try {
+      final auth = Provider.of<AuthBase>(context, listen: false);
       await auth.signInWithGoogle();
     } catch (e) {
       print(e.toString());
@@ -32,7 +31,7 @@ class SignInPage extends StatelessWidget {
         MaterialPageRoute(
           fullscreenDialog: true,
           builder: (context) {
-            return EmailSignInPage(auth: auth,);
+            return EmailSignInPage();
           },
         ));
   }
@@ -67,7 +66,7 @@ class SignInPage extends StatelessWidget {
             text: 'Sign in with google',
             color: Colors.white,
             textColor: Colors.black87,
-            onPressed: _signInWithGoogle,
+            onPressed:() => _signInWithGoogle(context),
           ),
           SizedBox(height: 8.0),
           SocialSignInButton(
@@ -99,7 +98,7 @@ class SignInPage extends StatelessWidget {
             text: 'Go anonymous',
             color: Colors.lime[300],
             textColor: Colors.black,
-            onPressed: _signInAnonymously,
+            onPressed: () => _signInAnonymously(context),
           ),
         ],
       ),
