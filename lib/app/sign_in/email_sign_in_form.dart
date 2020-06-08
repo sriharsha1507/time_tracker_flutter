@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/validators.dart';
 import 'package:timetrackerfluttercourse/common_widgets/form_submit_button.dart';
-import 'package:timetrackerfluttercourse/common_widgets/platform_alert_dialog.dart';
+import 'package:timetrackerfluttercourse/common_widgets/platform_exception_alert_dialog.dart';
 import 'package:timetrackerfluttercourse/services/auth.dart';
 
 enum EmailSignInFormType { signIn, register }
 
 class EmailSignInForm extends StatefulWidget with EmailAndPasswordValidator {
-
   @override
   _EmailSignInFormState createState() => _EmailSignInFormState();
 }
@@ -39,12 +39,11 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
           ? await auth.signInWithEmailAndPassword(_email, _password)
           : await auth.createUserWithEmailAndPassword(_email, _password);
       Navigator.of(context).pop();
-    } catch (e) {
+    } on PlatformException catch (e) {
       print(e.toString());
-      PlatformAlertDialog(
+      PlatformExceptionAlertDialog(
         title: "Sign in error",
-        content: e.toString(),
-        defaultActionText: "Ok",
+        exception: e,
       ).show(context);
     } finally {
       setState(() {
@@ -52,6 +51,15 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       });
     }
     print('email : $_email, password : $_password');
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   void _toggleForm() {

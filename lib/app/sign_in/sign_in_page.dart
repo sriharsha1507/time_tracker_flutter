@@ -1,27 +1,59 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/email_sign_in_page.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/sign_in_button.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/social_sign_in_button.dart';
+import 'package:timetrackerfluttercourse/common_widgets/platform_exception_alert_dialog.dart';
 import 'package:timetrackerfluttercourse/services/auth.dart';
 
-class SignInPage extends StatelessWidget {
+class SignInPage extends StatefulWidget {
+  @override
+  _SignInPageState createState() => _SignInPageState();
+}
+
+class _SignInPageState extends State<SignInPage> {
+  bool _isLoading = false;
+
+  void _showSignInError(BuildContext context, PlatformException exception) {
+    PlatformExceptionAlertDialog(
+      title: 'Sign in error',
+      exception: exception,
+    ).show(context);
+  }
+
   void _signInAnonymously(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
     final auth = Provider.of<AuthBase>(context, listen: false);
     try {
       await auth.signInAnonymously();
-    } catch (e) {
+    } on PlatformException catch (e) {
       print(e.toString());
+      if (e.code != 'ERROR_ABORTED_BY_USER') _showSignInError(context, e);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   void _signInWithGoogle(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final auth = Provider.of<AuthBase>(context, listen: false);
       await auth.signInWithGoogle();
-    } catch (e) {
+    } on PlatformException catch (e) {
       print(e.toString());
+      if (e.code != 'ERROR_ABORTED_BY_USER') _showSignInError(context, e);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -55,10 +87,9 @@ class SignInPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'Sign in',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
+          SizedBox(
+            height: 50.0,
+            child: _buildHeader(),
           ),
           SizedBox(height: 48.0),
           SocialSignInButton(
@@ -66,7 +97,7 @@ class SignInPage extends StatelessWidget {
             text: 'Sign in with google',
             color: Colors.white,
             textColor: Colors.black87,
-            onPressed:() => _signInWithGoogle(context),
+            onPressed: _isLoading ? null : () => _signInWithGoogle(context),
           ),
           SizedBox(height: 8.0),
           SocialSignInButton(
@@ -78,13 +109,10 @@ class SignInPage extends StatelessWidget {
           ),
           SizedBox(height: 8.0),
           SignInButton(
-            text: 'Sign in with email',
-            color: Colors.teal[700],
-            textColor: Colors.white,
-            onPressed: () {
-              _signInWithEmail(context);
-            },
-          ),
+              text: 'Sign in with email',
+              color: Colors.teal[700],
+              textColor: Colors.white,
+              onPressed: _isLoading ? null : () => _signInWithEmail(context)),
           SizedBox(height: 8.0),
           Text(
             'or',
@@ -98,10 +126,22 @@ class SignInPage extends StatelessWidget {
             text: 'Go anonymous',
             color: Colors.lime[300],
             textColor: Colors.black,
-            onPressed: () => _signInAnonymously(context),
+            onPressed: _isLoading ? null : () => _signInAnonymously(context),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildHeader() {
+    if (_isLoading) {
+      return CircularProgressIndicator();
+    } else {
+      return Text(
+        'Sign in',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
+      );
+    }
   }
 }
