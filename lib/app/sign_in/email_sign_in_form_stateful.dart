@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:timetrackerfluttercourse/app/sign_in/email_sign_in_model.dart';
 import 'package:timetrackerfluttercourse/app/sign_in/validators.dart';
 import 'package:timetrackerfluttercourse/common_widgets/form_submit_button.dart';
 import 'package:timetrackerfluttercourse/common_widgets/platform_exception_alert_dialog.dart';
 import 'package:timetrackerfluttercourse/services/auth.dart';
 
-enum EmailSignInFormType { signIn, register }
-
-class EmailSignInForm extends StatefulWidget with EmailAndPasswordValidator {
+class EmailSignInFormStateful extends StatefulWidget
+    with EmailAndPasswordValidator {
   @override
-  _EmailSignInFormState createState() => _EmailSignInFormState();
+  _EmailSignInFormStatefulState createState() =>
+      _EmailSignInFormStatefulState();
 }
 
-class _EmailSignInFormState extends State<EmailSignInForm> {
+class _EmailSignInFormStatefulState extends State<EmailSignInFormStateful> {
   EmailSignInFormType _formType = EmailSignInFormType.signIn;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
