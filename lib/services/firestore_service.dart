@@ -21,4 +21,10 @@ class FirestoreService {
     print('$path : $data');
     return await documentReference.setData(data);
   }
+
+  Future<void> deleteData({String path}) async {
+    final documentReference = Firestore.instance.document(path);
+    print('delete : $path');
+    return await documentReference.delete();
+  }
 }

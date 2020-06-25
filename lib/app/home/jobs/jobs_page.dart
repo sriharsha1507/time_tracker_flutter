@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:timetrackerfluttercourse/app/home/jobs/edit_job_page.dart';
+import 'package:timetrackerfluttercourse/app/home/jobs/empty_content.dart';
 import 'package:timetrackerfluttercourse/app/home/jobs/job_list_tile.dart';
+import 'package:timetrackerfluttercourse/app/home/jobs/list_items_builder.dart';
 import 'package:timetrackerfluttercourse/app/home/models/job.dart';
 import 'package:timetrackerfluttercourse/common_widgets/platform_alert_dialog.dart';
 import 'package:timetrackerfluttercourse/common_widgets/platform_exception_alert_dialog.dart';
@@ -71,22 +73,35 @@ Widget _buildContents(BuildContext context) {
   return StreamBuilder<List<Job>>(
     stream: database.jobsStream(),
     builder: (context, snapshot) {
-      if (snapshot.hasData) {
-        final jobs = snapshot.data;
-        final children = jobs
-            .map((job) => JobListTile(
-                  job: job,
-                  onTap: () => EditJobPage.show(context, job: job),
-                ))
-            .toList();
-        return ListView(children: children);
-      }
-      if (snapshot.hasError) {
-        return Center(
-          child: Text('There is some error'),
-        );
-      }
-      return Center(child: CircularProgressIndicator());
+      return ListItemsBuilder<Job>(
+        snapshot: snapshot,
+        itemWidgetBuilder: (context, job) => Dismissible(
+          key: Key(
+            'job-$job.id',
+          ),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            color: Colors.red,
+          ),
+          onDismissed: (direction) => _delete(context, job),
+          child: JobListTile(
+            job: job,
+            onTap: () => EditJobPage.show(context, job: job),
+          ),
+        ),
+      );
     },
   );
+}
+
+Future<void> _delete(BuildContext context, Job job) async {
+  final database = Provider.of<Database>(context);
+  try {
+    await database.deleteJob(job);
+  } on PlatformException catch (e) {
+    PlatformExceptionAlertDialog(
+      title: 'Unable to delete',
+      exception: e,
+    ).show(context);
+  }
 }
