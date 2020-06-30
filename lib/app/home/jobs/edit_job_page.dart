@@ -7,21 +7,19 @@ import 'package:timetrackerfluttercourse/common_widgets/platform_exception_alert
 import 'package:timetrackerfluttercourse/services/database.dart';
 
 class EditJobPage extends StatefulWidget {
+  const EditJobPage({Key key, @required this.database, this.job})
+      : super(key: key);
   final Database database;
   final Job job;
 
-  const EditJobPage({Key key, @required this.database, this.job})
-      : super(key: key);
-
   static Future<void> show(BuildContext context, {Job job}) async {
-    final database = Provider.of<Database>(context, listen: false);
-    Navigator.of(context).push(MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (context) => EditJobPage(
-        database: database,
-        job: job,
+    final database = Provider.of<Database>(context);
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditJobPage(database: database, job: job),
+        fullscreenDialog: true,
       ),
-    ));
+    );
   }
 
   @override
@@ -34,49 +32,50 @@ class _EditJobPageState extends State<EditJobPage> {
   String _name;
   int _ratePerHour;
 
-  Job get _job => widget.job;
 
   @override
   void initState() {
     super.initState();
     if (widget.job != null) {
-      _name = _job.name;
-      _ratePerHour = _job.ratePerHour;
+      _name = widget.job.name;
+      _ratePerHour = widget.job.ratePerHour;
     }
   }
 
-  bool validateAndSaveForm() {
+  bool _validateAndSaveForm() {
     final form = _formKey.currentState;
     if (form.validate()) {
       form.save();
       return true;
-    } else
-      return false;
+    }
+    return false;
   }
 
   Future<void> _submit() async {
-    if (validateAndSaveForm()) {
+    if (_validateAndSaveForm()) {
       try {
         final jobs = await widget.database.jobsStream().first;
-        final allJobs = jobs.map((job) => job.name).toList();
-        if (_job != null) {
-          allJobs.remove(_job.name);
+        final allNames = jobs.map((job) => job.name).toList();
+        if (widget.job != null) {
+          allNames.remove(widget.job.name);
         }
-        if (allJobs.contains(_name)) {
+        if (allNames.contains(_name)) {
           PlatformAlertDialog(
             title: 'Name already used',
-            content: 'Please choose a differnt name',
-            defaultActionText: 'Ok',
+            content: 'Please choose a different job name',
+            defaultActionText: 'OK',
           ).show(context);
         } else {
-          final id = widget.job?.id ?? documentIdFromCurrentData();
-          await widget.database
-              .setJob(Job(id: id, name: _name, ratePerHour: _ratePerHour));
+          final id = widget.job?.id ?? documentIdFromCurrentDate();
+          final job = Job(id: id, name: _name, ratePerHour: _ratePerHour);
+          await widget.database.setJob(job);
           Navigator.of(context).pop();
         }
       } on PlatformException catch (e) {
-        PlatformExceptionAlertDialog(title: 'Operation failed', exception: e)
-            .show(context);
+        PlatformExceptionAlertDialog(
+          title: 'Operation failed',
+          exception: e,
+        ).show(context);
       }
     }
   }
@@ -86,26 +85,33 @@ class _EditJobPageState extends State<EditJobPage> {
     return Scaffold(
       appBar: AppBar(
         elevation: 2.0,
-        title: Text('New Job'),
+        title: Text(widget.job == null ? 'New Job' : 'Edit Job'),
         actions: <Widget>[
           FlatButton(
             child: Text(
-              _job == null ? 'Save' : 'Edit Job',
-              style: TextStyle(fontSize: 18.0, color: Colors.white),
+              'Save',
+              style: TextStyle(fontSize: 18, color: Colors.white),
             ),
             onPressed: _submit,
-          )
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Card(
-              child: Padding(
-                  padding: const EdgeInsets.all(16.0), child: _buildForm())),
+      body: _buildContents(),
+      backgroundColor: Colors.grey[200],
+    );
+  }
+
+  Widget _buildContents() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildForm(),
+          ),
         ),
       ),
-      backgroundColor: Colors.grey[200],
     );
   }
 
@@ -130,12 +136,12 @@ class _EditJobPageState extends State<EditJobPage> {
       TextFormField(
         decoration: InputDecoration(labelText: 'Rate per hour'),
         initialValue: _ratePerHour != null ? '$_ratePerHour' : null,
-        keyboardType:
-            TextInputType.numberWithOptions(signed: false, decimal: false),
+        keyboardType: TextInputType.numberWithOptions(
+          signed: false,
+          decimal: false,
+        ),
         onSaved: (value) => _ratePerHour = int.tryParse(value) ?? 0,
       ),
     ];
   }
-
-  Future<void> _createJob(BuildContext context) async {}
 }
